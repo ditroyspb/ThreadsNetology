@@ -1,18 +1,21 @@
 import java.util.*;
+import java.util.concurrent.*;
 
 public class Main {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
         String[] texts = new String[25];
         for (int i = 0; i < texts.length; i++) {
             texts[i] = generateText("aab", 30_000);
         }
 
-        List<Thread> threads = new ArrayList<>();
+        final ExecutorService threadPool = Executors.newFixedThreadPool(texts.length);
+
+        List<Future> futures = new ArrayList<>();
 
         long startTs = System.currentTimeMillis(); // start time
         for (String text : texts) {
-            Runnable logic = () -> {
+            Callable<Integer> myCallable = () -> {
                 int maxSize = 0;
                 for (int i = 0; i < text.length(); i++) {
                     for (int j = 0; j < text.length(); j++) {
@@ -32,17 +35,25 @@ public class Main {
                     }
                 }
                 System.out.println(text.substring(0, 100) + " -> " + maxSize);
+                return maxSize;
             };
-            Thread thread = new Thread(logic);
-            threads.add(thread);
-            thread.start();
+            final Future<Integer> task = threadPool.submit(myCallable);
+            futures.add(task);
         }
-
-        for (Thread thread : threads) {
-            thread.join(); // зависаем, ждём когда поток объект которого лежит в thread завершится
+        int maxValue = 0;
+        int minValue = 1000;
+        for (Future future : futures) {
+            final int resultOfTask = (int) future.get();
+            if (resultOfTask > maxValue) {
+                maxValue = resultOfTask;
+            } else if (resultOfTask < minValue) {
+                minValue = resultOfTask;
+            }
         }
-
+        System.out.println(maxValue - minValue);
         long endTs = System.currentTimeMillis(); // end time
+
+        threadPool.shutdown();
 
         System.out.println("Time: " + (endTs - startTs) + "ms");
     }
