@@ -40,17 +40,15 @@ public class Main {
             final Future<Integer> task = threadPool.submit(myCallable);
             futures.add(task);
         }
+
         int maxValue = 0;
-        int minValue = 1000;
         for (Future future : futures) {
             final int resultOfTask = (int) future.get();
             if (resultOfTask > maxValue) {
                 maxValue = resultOfTask;
-            } else if (resultOfTask < minValue) {
-                minValue = resultOfTask;
             }
         }
-        System.out.println(maxValue - minValue);
+        System.out.println(maxValue);
         long endTs = System.currentTimeMillis(); // end time
 
         threadPool.shutdown();
